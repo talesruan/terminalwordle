@@ -1,9 +1,33 @@
 const fs = require("fs");
 const readline = require('readline').createInterface({input: process.stdin, output: process.stdout,});
 
+
+const boardMargin = 5;
+const SCORE_GREEN = 3;
+const SCORE_YELLOW = 2;
+const SCORE_GRAY = 1;
+const SCORE_NONE = 0;
+
+const winMessages = [
+	"Genius",
+	"Magnificient",
+	"Impressive",
+	"Splendid",
+	"Great",
+	"Phew"
+];
+
+const keyboardLayout = [
+	"QWERTYUIOP",
+	" ASDFGHJKL",
+	"  ZXCVBNM"
+]
+
 const numberOfLetters = 5;
 const maxNumberOfAttempts = 6;
 const attempts = [];
+const scores = [];
+let isGameWon = false;
 let errorMessage;
 let chosenWord;
 
@@ -26,37 +50,72 @@ const getRandomNumberBetween = (a, b) => {
 const playWord = (word) => {
 	word = word.toUpperCase();
 	if (word.length !== numberOfLetters) {
-		// console.log(`Must be a ${numberOfLetters} letters word.`);
 		errorMessage = `Must be a ${numberOfLetters} letters word.`;
 		askForWord();
 		return;
 	}
 	attempts.push(word);
-	askForWord();
+	const wordScores = getLetterScoresByWord(word);
+	scores.push(wordScores);
+	isGameWon = wordScores.every(score => score === SCORE_GREEN);
+	if (isGameWon){
+		drawBoard();
+		readline.close();
+	} else {
+		askForWord();
+	}
+};
+
+const getLetterScoresByWord = (attemptedWord) => {
+	const scores = [];
+	for (let pos = 0; pos < numberOfLetters; pos++) {
+		const letter = attemptedWord[pos];
+		scores.push(getLetterScore(letter, pos))
+	}
+	return scores;
 };
 
 const drawBoard = () => {
 	console.clear();
 	// console.log("word is", chosenWord);
-	const separator = "+---".repeat(numberOfLetters) + "+";
+	const separator = " ".repeat(boardMargin) + "+---".repeat(numberOfLetters) + "+";
 	for (let row = 0; row < maxNumberOfAttempts; row++) {
 		console.log(separator);
-		let wordString = "";
+		let wordString = " ".repeat(boardMargin);
 		for (let col = 0; col < numberOfLetters; col++) {
 			const letter = attempts[row] ? attempts[row][col] : " ";
-			wordString += "|" + getColoredString(" " +letter + " ", getLetterColor(letter, col));
+			const score = scores[row] ? scores[row][col] : SCORE_NONE;
+			wordString += "|" + getColoredString(" " +letter + " ", getColorByScore(score));
 		}
 		wordString += "|"
 		console.log(wordString);
 	}
 	console.log(separator);
+	console.log("");
+	for (const keyboardRow of keyboardLayout) {
+		let keyboardString = ""
+		for (const char of keyboardRow) {
+			keyboardString += getColoredString(" " +char + " ", getColorByScore(getRandomNumberBetween(0, 3)));
+		}
+		console.log(keyboardString);
+	}
+	if (isGameWon) {
+		console.log("");
+		console.log(winMessages[attempts.length - 1].toUpperCase());
+	}
 };
 
-const getLetterColor = (letter, position) => {
-	if (chosenWord[position] === letter) return "green";
-	if (chosenWord.split("").includes(letter)) return "yellow";
-	return "gray";
+const getLetterScore = (letter, position) => {
+	if (chosenWord[position] === letter) return SCORE_GREEN;
+	if (chosenWord.split("").includes(letter)) return SCORE_YELLOW;
+	return SCORE_GRAY;
 };
+
+const getColorByScore = (score) => {
+	if (score === SCORE_GREEN) return "green";
+	if (score === SCORE_YELLOW) return "yellow";
+	if (score === SCORE_GRAY) return "gray";
+}
 
 const getColoredString = (string, color) => {
 	const Reset = "\x1b[0m";
