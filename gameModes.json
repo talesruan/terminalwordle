@@ -1,0 +1,30 @@
+[
+	{
+		"name": "wordle",
+		"games": 1,
+		"letters": 5,
+		"words": 6,
+		"dictionary": "english"
+	},
+	{
+		"name": "termo",
+		"games": 1,
+		"letters": 5,
+		"words": 6,
+		"dictionary": "portuguese"
+	},
+	{
+		"name": "dueto",
+		"games": 2,
+		"letters": 5,
+		"words": 7,
+		"dictionary": "portuguese"
+	},
+	{
+		"name": "quarteto",
+		"games": 4,
+		"letters": 5,
+		"words": 9,
+		"dictionary": "portuguese"
+	}
+]

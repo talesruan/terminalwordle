@@ -2,11 +2,11 @@ const fs = require("fs");
 const readline = require('readline').createInterface({input: process.stdin, output: process.stdout,});
 
 
-const boardMargin = 5;
+const boardMargin = 4;
 const SCORE_GREEN = 3;
 const SCORE_YELLOW = 2;
-const SCORE_GRAY = 1;
-const SCORE_NONE = 0;
+const SCORE_GRAY = 1; // Attempted
+const SCORE_NONE = 0; // Not attempted
 
 const winMessages = [
 	"Genius",
@@ -27,7 +27,9 @@ const numberOfLetters = 5;
 const maxNumberOfAttempts = 6;
 const attempts = [];
 const scores = [];
+const scoreByLetter = {};
 let isGameWon = false;
+let isGameLost = false;
 let errorMessage;
 let chosenWord;
 
@@ -62,7 +64,13 @@ const playWord = (word) => {
 		drawBoard();
 		readline.close();
 	} else {
-		askForWord();
+		if (attempts.length >= maxNumberOfAttempts) {
+			isGameLost = true;
+			drawBoard();
+			readline.close();
+		} else {
+			askForWord();
+		}
 	}
 };
 
@@ -95,13 +103,16 @@ const drawBoard = () => {
 	for (const keyboardRow of keyboardLayout) {
 		let keyboardString = ""
 		for (const char of keyboardRow) {
-			keyboardString += getColoredString(" " +char + " ", getColorByScore(getRandomNumberBetween(0, 3)));
+			keyboardString += getColoredString(" " +char + " ", getColorByScore(scoreByLetter[char]));
 		}
 		console.log(keyboardString);
 	}
 	if (isGameWon) {
 		console.log("");
 		console.log(winMessages[attempts.length - 1].toUpperCase());
+	} else if (isGameLost) {
+		console.log("");
+		console.log(" ".repeat(boardMargin + 8) + chosenWord);
 	}
 };
 
