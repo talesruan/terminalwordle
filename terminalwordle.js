@@ -1,7 +1,6 @@
 const fs = require("fs");
 const readline = require('readline').createInterface({input: process.stdin, output: process.stdout,});
 
-
 const boardMargin = 4;
 const SCORE_GREEN = 3;
 const SCORE_YELLOW = 2;
@@ -32,10 +31,12 @@ let isGameWon = false;
 let isGameLost = false;
 let errorMessage;
 let chosenWord;
+let dictionary;
 
 const getDictionary = () => {
-	const dictionaryFile = fs.readFileSync("dictionary.txt", "utf8");
-	const dictionary = dictionaryFile.split("\n").filter(word => word.length === numberOfLetters);
+	if (dictionary) return dictionary;
+	const dictionaryFile = fs.readFileSync("./dictionaries/english.txt", "utf8");
+	dictionary = dictionaryFile.split("\n").filter(word => word.length === numberOfLetters);
 	if (dictionary.length === 0) throw new Error("Dictionary is empty.");
 	return dictionary;
 }
@@ -56,10 +57,14 @@ const playWord = (word) => {
 		askForWord();
 		return;
 	}
+	if (!getDictionary().includes(word.toLowerCase())) {
+		errorMessage = `${word.toUpperCase()} is not in word list`;
+		askForWord();
+		return;
+	}
 	attempts.push(word);
-	const wordScores = getLetterScoresByWord(word);
-	scores.push(wordScores);
-	isGameWon = wordScores.every(score => score === SCORE_GREEN);
+	scoreAttempt(word);
+
 	if (isGameWon){
 		drawBoard();
 		readline.close();
@@ -74,13 +79,16 @@ const playWord = (word) => {
 	}
 };
 
-const getLetterScoresByWord = (attemptedWord) => {
-	const scores = [];
+const scoreAttempt = (attemptedWord) => {
+	const wordScores = [];
 	for (let pos = 0; pos < numberOfLetters; pos++) {
 		const letter = attemptedWord[pos];
-		scores.push(getLetterScore(letter, pos))
+		const letterScore = getLetterScore(letter, pos);
+		scoreByLetter[letter] = scoreByLetter[letter] ? Math.max(scoreByLetter[letter], letterScore) : letterScore;
+		wordScores.push(letterScore)
 	}
-	return scores;
+	scores.push(wordScores);
+	isGameWon = wordScores.every(score => score === SCORE_GREEN);
 };
 
 const drawBoard = () => {
@@ -103,7 +111,8 @@ const drawBoard = () => {
 	for (const keyboardRow of keyboardLayout) {
 		let keyboardString = ""
 		for (const char of keyboardRow) {
-			keyboardString += getColoredString(" " +char + " ", getColorByScore(scoreByLetter[char]));
+			if (char === " ") keyboardString += "   ";
+			else keyboardString += getColoredString(" " +char + " ", getKeyboardColorByScore(scoreByLetter[char]));
 		}
 		console.log(keyboardString);
 	}
@@ -126,15 +135,27 @@ const getColorByScore = (score) => {
 	if (score === SCORE_GREEN) return "green";
 	if (score === SCORE_YELLOW) return "yellow";
 	if (score === SCORE_GRAY) return "gray";
+	if (score === SCORE_NONE) return "black";
+}
+
+const getKeyboardColorByScore = (score) => {
+	if (score === SCORE_GREEN) return "green";
+	if (score === SCORE_YELLOW) return "yellow";
+	if (score === SCORE_GRAY) return "black";
+	return "gray";
 }
 
 const getColoredString = (string, color) => {
 	const Reset = "\x1b[0m";
+	const FgBrightWhite = "\x1b[97m";
 	const BgBlue = "\x1b[44m";
 	const BgGreen = "\x1b[42m";
 	const BgYellow = "\x1b[43m"
-	if (color === "green") return BgGreen + string + Reset;
-	if (color === "yellow") return BgYellow + string + Reset;
+	const BgWhite = "\x1b[47m"
+	const BgGray = "\x1b[100m"
+	if (color === "green") return FgBrightWhite + BgGreen + string + Reset;
+	if (color === "yellow") return FgBrightWhite + BgYellow + string + Reset;
+	if (color === "gray") return FgBrightWhite + BgGray + string + Reset;
 	return string;
 };
 
